@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+a {
+  color: #2c7871;
+}
+a:hover {
+  color: #1f5f59;
+}
