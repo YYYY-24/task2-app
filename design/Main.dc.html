@@ -295,6 +295,20 @@ class Component extends DCLogic {
       if (!s) return '未定';
       return fmtDate(s) + (t ? ' ' + t : '');
     }
+    function fmtShort(d) {
+      return (d.getMonth() + 1) + '/' + d.getDate();
+    }
+
+    // 週の開始は月曜日（月〜日で1週間）
+    const weekday = today.getDay(); // 0=日,1=月,...6=土
+    const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() + mondayOffset);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
     const projectMap = {};
     projects.forEach(function (p) { projectMap[p.id] = p.name; });
@@ -325,13 +339,23 @@ class Component extends DCLogic {
     });
 
     const periodFilter = this.state.periodFilter;
-    const periodMax = periodFilter === 'week' ? 7 : (periodFilter === 'month' ? 31 : Infinity);
+    const periodRange = periodFilter === 'week' ? { start: weekStart, end: weekEnd }
+      : periodFilter === 'month' ? { start: monthStart, end: monthEnd }
+      : null;
     const allSorted = tasks.slice().sort(function (a, b) { return a.sortKey - b.sortKey; });
-    const scheduleTasks = allSorted.filter(function (t) { return diffDays(t.due) <= periodMax; });
+    const scheduleTasks = allSorted.filter(function (t) {
+      if (t.urgency === 'overdue') return true;
+      if (!periodRange) return true;
+      const d = new Date(t.due + 'T00:00:00');
+      return d >= periodRange.start && d <= periodRange.end;
+    });
     const hiddenCount = allSorted.length - scheduleTasks.length;
-    const periodCountLabel = periodFilter === 'all'
-      ? scheduleTasks.length + '件を表示中'
-      : scheduleTasks.length + '件を表示中（範囲外' + hiddenCount + '件は非表示）';
+    const periodRangeLabel = periodFilter === 'week' ? fmtShort(weekStart) + '(月)〜' + fmtShort(weekEnd) + '(日)'
+      : periodFilter === 'month' ? (today.getMonth() + 1) + '月'
+      : null;
+    const periodCountLabel = periodRangeLabel
+      ? periodRangeLabel + ' ・ ' + scheduleTasks.length + '件を表示中（超過分を含む、範囲外' + hiddenCount + '件は非表示）'
+      : scheduleTasks.length + '件を表示中';
 
     const projectCards = projects.map(function (p) {
       const pts = tasks.filter(function (t) { return t.projectId === p.id; });
