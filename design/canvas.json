@@ -1,0 +1,11 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1280, "h": 860, "is_interactive": true },
+    { "file": "Mobile.dc.html", "x": 1360, "y": 0, "w": 390, "h": 844, "is_interactive": true }
+  ],
+  "annotations": [
+    { "id": "note-desktop", "x": 0, "y": -80, "w": 300, "text": "デスクトップ版（PCメイン）" },
+    { "id": "note-mobile", "x": 1360, "y": -80, "w": 300, "text": "モバイル版（確認用）" }
+  ],
+  "launch": { "view": "focused", "file": "Main.dc.html" }
+}

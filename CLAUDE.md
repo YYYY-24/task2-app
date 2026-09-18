@@ -31,9 +31,11 @@
 - 優先デバイス: PCメイン、スマホでも確認できるようにする
 - 操作フロー: プロジェクト作成 → 業務入力 → 期限/実行日入力 → 保存 → 表示 → 編集
 - 通知/フィードバック: 締切が近いことを視覚的に知らせる（音のアラートではなく、色や表示で強調）
+  - 超過: 濃い赤／3日以内: コーラル／1週間以内: ティール／それ以降: グレー、の4段階で色分けする
+- スケジュール画面の絞り込み: 件数増加に備え「今週／今月／すべて」の期間フィルターを設ける（デフォルトは今週）。超過タスクは期間に関わらず常に表示する
 
 ### Step 3: Logic & Data
-- データ項目: プロジェクト（名称、開始予定時期）、業務項目（プロジェクトに紐づく、期限、次回打ち合わせ日、担当者）
+- データ項目: プロジェクト（名称、開始予定時期）、業務項目（プロジェクトに紐づく、期限〈日付＋時刻〉、次回打ち合わせ日〈日付＋時刻〉、担当者）
 - サンプルデータ:
   - プロジェクトA / 開始予定時期: 2026-10-01
   - 業務項目: ①要件整理 ②設計 ③実装 …
@@ -97,21 +99,23 @@ create table tasks (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   name text not null,
-  due_date date,
-  next_meeting_date date,
+  due_at timestamptz,
+  next_meeting_at timestamptz,
   assignee text,
   sort_order integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
-create index tasks_due_date_idx on tasks(due_date);
+create index tasks_due_at_idx on tasks(due_at);
 create index tasks_project_id_idx on tasks(project_id);
 ```
 
-- スケジュール画面（全プロジェクト横断）は `tasks` を `due_date` 昇順でJOINして表示する。
-- 業務リスト画面（プロジェクト内）は `project_id` で絞り込み、同様に `due_date` 昇順で表示する。
-- 将来のLINE通知連携は、Supabase Edge Functions + Cron（pg_cron）で `due_date` が近い `tasks` を検出し、LINE Messaging APIへ送信する構成を想定。
+- 期限・次回打ち合わせは日付＋時刻で保持する（`timestamptz`）。入力画面では日付欄と時刻欄を分けて入力させる。
+- スケジュール画面（全プロジェクト横断）は `tasks` を `due_at` 昇順でJOINして表示する。「今週／今月／すべて」の期間フィルターで絞り込み、超過（`due_at` < 現在時刻）は常に表示する。
+- 業務リスト画面（プロジェクト内）は `project_id` で絞り込み、同様に `due_at` 昇順で表示する。
+- 締切の近さは4段階で色分け表示する: 超過（濃い赤）／3日以内（コーラル）／1週間以内（ティール）／それ以降（グレー）。
+- 将来のLINE通知連携は、Supabase Edge Functions + Cron（pg_cron）で `due_at` が近い `tasks` を検出し、LINE Messaging APIへ送信する構成を想定。
 
 ## 開発の進め方
 
@@ -119,6 +123,13 @@ create index tasks_project_id_idx on tasks(project_id);
 2. 上記DB設計に沿ってマイグレーションを作成する。
 3. スケジュール画面 → プロジェクト一覧 → 業務リスト → 入力/編集画面の順に実装する（コア機能を最優先）。
 4. 区切りの良い単位でコミットし、GitHubにプッシュする。
+
+## デザインプロトタイプ
+
+UIの見た目・使用感は下記のクリッカブルプロトタイプで確認済み（デスクトップ／モバイル）。実装時のレイアウト・配色・画面遷移の参考にする。
+
+- https://claude.ai/code/artifact/36a0e6ca-2bb8-45e6-bf85-c11e3a0d0319
+- 作業用ソース: `design/Main.dc.html`, `design/Mobile.dc.html`, `design/canvas.json`
 
 ## リポジトリ
 

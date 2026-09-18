@@ -1,0 +1,377 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: #2c7871; }
+    a:hover { color: #1f5f59; }
+    .row:active { background: #f3f5f5; }
+    .card:active { background: #f7f9f9; }
+    .tab { transition: color 0.15s ease; }
+    input:focus { outline: 2px solid #2c7871; outline-offset: 1px; border-color: #2c7871; }
+  </style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; height:100%; background:#f5f7f7; font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif; color:#24292b;">
+
+  <div style="flex-shrink:0; display:flex; align-items:center; gap:10px; padding:16px 18px; background:#ffffff; border-bottom:1px solid #e3e7e8;">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="8" fill="{{accentTeal}}"/>
+      <path d="M8 14.5l4 4 8-9" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div style="font-weight:700; font-size:15px;">業務内容整理アプリ</div>
+  </div>
+
+  <div style="flex:1; min-height:0; overflow:auto; padding:18px;">
+
+    <sc-if value="{{isSchedule}}" hint-placeholder-val="{{true}}">
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:2px;">スケジュール</div>
+        <div style="font-size:12px; color:#6b7680; margin-bottom:12px;">期限が近い順に表示（超過分は常に表示）</div>
+        <div style="display:flex; gap:4px; background:#f1f3f4; padding:4px; border-radius:10px; margin-bottom:10px;">
+          <div onClick="{{setPeriodWeek}}" style="flex:1; text-align:center; padding:7px 0; border-radius:8px; font-size:12px; font-weight:600; background:{{periodWeekBg}}; color:{{periodWeekColor}};">今週</div>
+          <div onClick="{{setPeriodMonth}}" style="flex:1; text-align:center; padding:7px 0; border-radius:8px; font-size:12px; font-weight:600; background:{{periodMonthBg}}; color:{{periodMonthColor}};">今月</div>
+          <div onClick="{{setPeriodAll}}" style="flex:1; text-align:center; padding:7px 0; border-radius:8px; font-size:12px; font-weight:600; background:{{periodAllBg}}; color:{{periodAllColor}};">すべて</div>
+        </div>
+        <div style="font-size:11px; color:#9aa2a9; margin-bottom:10px;">{{periodCountLabel}}</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{scheduleTasks}}" as="item" hint-placeholder-count="5">
+            <div class="row" onClick="{{item.goto}}" style="display:flex; align-items:flex-start; gap:12px; background:#ffffff; border:1px solid #e3e7e8; border-radius:12px; padding:12px 14px;">
+              <div style="width:9px; height:9px; border-radius:50%; background:{{item.color}}; margin-top:4px; flex-shrink:0;"></div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <div style="font-size:14px; font-weight:600;">{{item.name}}</div>
+                  <div style="font-size:11px; font-weight:700; color:{{item.color}}; white-space:nowrap;">{{item.countdown}}</div>
+                </div>
+                <div style="font-size:11px; color:#8a929a; margin-top:2px;">{{item.projectName}} ・ 期限 {{item.dueLabel}}</div>
+                <div style="font-size:11px; color:#a7aeb8; margin-top:2px;">担当: {{item.assignee}} ・ 次回打合せ {{item.nextMeetingLabel}}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isProjects}}" hint-placeholder-val="{{false}}">
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:2px;">プロジェクト一覧</div>
+        <div style="font-size:12px; color:#6b7680; margin-bottom:16px;">タップして業務リストを表示</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <sc-for list="{{projectCards}}" as="p" hint-placeholder-count="2">
+            <div class="card" onClick="{{p.open}}" style="background:#ffffff; border:1px solid #e3e7e8; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="font-size:15px; font-weight:700;">{{p.name}}</div>
+                <div style="font-size:11px; color:#9aa2a9; background:#f1f3f4; padding:3px 10px; border-radius:999px;">{{p.taskCount}}件</div>
+              </div>
+              <div style="font-size:12px; color:#8a929a;">開始予定: {{p.startDate}}</div>
+              <div style="font-size:12px; color:#6b7680;">直近の期限: <span style="font-weight:600; color:#24292b;">{{p.nearestLabel}}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isTasks}}" hint-placeholder-val="{{false}}">
+      <div>
+        <div onClick="{{backToProjects}}" style="display:flex; align-items:center; gap:6px; margin-bottom:8px; color:#6b7680; font-size:12px; width:fit-content;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+          プロジェクト一覧
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <div style="font-size:17px; font-weight:700;">{{selectedProject.name}}</div>
+          <div onClick="{{goToAddTask}}" style="display:flex; align-items:center; gap:4px; background:{{accentTeal}}; color:#ffffff; padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+            追加
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <sc-for list="{{projectTasks}}" as="item" hint-placeholder-count="3">
+            <div class="row" style="display:flex; align-items:flex-start; gap:12px; background:#ffffff; border:1px solid #e3e7e8; border-radius:12px; padding:12px 14px;">
+              <div style="width:9px; height:9px; border-radius:50%; background:{{item.color}}; margin-top:4px; flex-shrink:0;"></div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <div style="font-size:14px; font-weight:600;">{{item.name}}</div>
+                  <div style="font-size:11px; font-weight:700; color:{{item.color}}; white-space:nowrap;">{{item.countdown}}</div>
+                </div>
+                <div style="font-size:11px; color:#a7aeb8; margin-top:2px;">担当: {{item.assignee}} ・ 次回打合せ {{item.nextMeetingLabel}}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isInput}}" hint-placeholder-val="{{false}}">
+      <div>
+        <div style="font-size:17px; font-weight:700; margin-bottom:14px;">新規登録</div>
+
+        <div style="display:flex; gap:4px; background:#f1f3f4; padding:4px; border-radius:10px; margin-bottom:18px;">
+          <div onClick="{{setTabProject}}" style="flex:1; text-align:center; padding:8px 0; border-radius:8px; font-size:13px; font-weight:600; background:{{tabProjectBg}}; color:{{tabProjectColor}};">プロジェクト</div>
+          <div onClick="{{setTabTask}}" style="flex:1; text-align:center; padding:8px 0; border-radius:8px; font-size:13px; font-weight:600; background:{{tabTaskBg}}; color:{{tabTaskColor}};">業務項目</div>
+        </div>
+
+        <sc-if value="{{isTabProject}}" hint-placeholder-val="{{true}}">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:#6b7680;">
+              プロジェクト名称
+              <input type="text" value="プロジェクトC" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+            </label>
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:#6b7680;">
+              開始予定時期
+              <input type="text" value="2026-11-01" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+            </label>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isTabTask}}" hint-placeholder-val="{{false}}">
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="font-size:12px; color:#6b7680;">所属プロジェクト: <span style="font-weight:700; color:#24292b;">{{selectedProject.name}}</span></div>
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:#6b7680;">
+              業務項目名称
+              <input type="text" value="④テスト・レビュー" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+            </label>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:#6b7680;">
+              期限
+              <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px;">
+                <input type="text" value="2026-10-20" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+                <input type="text" value="18:00" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:#6b7680;">
+              次回打ち合わせ日
+              <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px;">
+                <input type="text" value="2026-10-15" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+                <input type="text" value="14:00" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+              </div>
+            </div>
+            <label style="display:flex; flex-direction:column; gap:6px; font-size:12px; color:#6b7680;">
+              担当者
+              <input type="text" value="山田" style="border:1px solid #d8dcde; border-radius:9px; padding:10px 12px; font-size:14px; font-family:inherit;" />
+            </label>
+          </div>
+        </sc-if>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+          <div onClick="{{handleSave}}" style="background:{{accentTeal}}; color:#ffffff; padding:12px; border-radius:9px; font-size:14px; font-weight:600; text-align:center;">保存する</div>
+          <sc-if value="{{saved}}" hint-placeholder-val="{{false}}">
+            <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:{{accentTeal}}; font-weight:600;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12l5 5L20 6"/></svg>
+              保存しました（プロトタイプのため実際には保存されません）
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <div style="flex-shrink:0; display:flex; border-top:1px solid #e3e7e8; background:#ffffff;">
+    <div class="tab" onClick="{{goSchedule}}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 0 12px; color:{{scheduleNavColor}};">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      <span style="font-size:10px; font-weight:600;">スケジュール</span>
+    </div>
+    <div class="tab" onClick="{{goProjects}}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 0 12px; color:{{projectsNavColor}};">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+      <span style="font-size:10px; font-weight:600;">プロジェクト</span>
+    </div>
+    <div class="tab" onClick="{{goInput}}" style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 0 12px; color:{{inputNavColor}};">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+      <span style="font-size:10px; font-weight:600;">新規登録</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accentTeal":{"editor":"color","default":"#2c7871","options":["#2c7871","#3f978e","#1f6f66","#245e75"]},"accentCoral":{"editor":"color","default":"#c14a34","options":["#c14a34","#e0654f","#b5482f","#a8402c"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      view: 'schedule',
+      selectedProjectId: 1,
+      inputTab: 'project',
+      saved: false,
+      periodFilter: 'week',
+    };
+  }
+
+  goView(view) {
+    this.setState({ view: view, saved: false });
+  }
+
+  setPeriod(period) {
+    this.setState({ periodFilter: period });
+  }
+
+  selectProject(id) {
+    this.setState({ view: 'tasks', selectedProjectId: id });
+  }
+
+  goAddTask() {
+    this.setState({ view: 'input', inputTab: 'task', saved: false });
+  }
+
+  setInputTab(tab) {
+    this.setState({ inputTab: tab, saved: false });
+  }
+
+  handleSave() {
+    this.setState({ saved: true });
+  }
+
+  renderVals() {
+    const self = this;
+    const accentTeal = this.props.accentTeal || '#2c7871';
+    const accentCoral = this.props.accentCoral || '#c14a34';
+    const laterColor = '#8a929a';
+    const today = new Date('2026-09-18T00:00:00');
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const projects = [
+      { id: 1, name: 'プロジェクトA', startDate: '2026-09-01' },
+      { id: 2, name: 'プロジェクトB', startDate: '2026-09-10' },
+    ];
+
+    const tasksRaw = [
+      { id: 1, projectId: 1, name: '①要件整理', due: '2026-09-16', dueTime: '17:00', nextMeeting: '2026-09-19', nextMeetingTime: '10:00', assignee: '山田' },
+      { id: 2, projectId: 1, name: '②設計', due: '2026-09-21', dueTime: '12:00', nextMeeting: '2026-09-22', nextMeetingTime: '14:00', assignee: '山田' },
+      { id: 3, projectId: 1, name: '③実装', due: '2026-10-05', dueTime: '18:00', nextMeeting: '', nextMeetingTime: '', assignee: '佐藤' },
+      { id: 4, projectId: 2, name: '要件確認', due: '2026-09-24', dueTime: '15:00', nextMeeting: '', nextMeetingTime: '', assignee: '鈴木' },
+      { id: 5, projectId: 2, name: '見積作成', due: '2026-10-01', dueTime: '17:00', nextMeeting: '', nextMeetingTime: '', assignee: '山田' },
+    ];
+
+    function diffDays(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return Math.round((d - today) / dayMs);
+    }
+    function countdownLabel(diff) {
+      if (diff < 0) return (-diff) + '日超過';
+      if (diff === 0) return '本日';
+      if (diff === 1) return '明日';
+      return 'あと' + diff + '日';
+    }
+    function fmtDate(s) {
+      if (!s) return '未定';
+      const d = new Date(s + 'T00:00:00');
+      return (d.getMonth() + 1) + '/' + d.getDate();
+    }
+    function fmtDateTime(s, t) {
+      if (!s) return '未定';
+      return fmtDate(s) + (t ? ' ' + t : '');
+    }
+
+    const projectMap = {};
+    projects.forEach(function (p) { projectMap[p.id] = p.name; });
+
+    const overdueColor = '#9c3a26';
+
+    const tasks = tasksRaw.map(function (t) {
+      const diff = diffDays(t.due);
+      let urgency, color;
+      if (diff < 0) { urgency = 'overdue'; color = overdueColor; }
+      else if (diff <= 3) { urgency = 'urgent'; color = accentCoral; }
+      else if (diff <= 7) { urgency = 'soon'; color = accentTeal; }
+      else { urgency = 'later'; color = laterColor; }
+      return {
+        id: t.id,
+        projectId: t.projectId,
+        name: t.name,
+        assignee: t.assignee,
+        projectName: projectMap[t.projectId],
+        dueLabel: fmtDateTime(t.due, t.dueTime),
+        countdown: countdownLabel(diff),
+        urgency: urgency,
+        color: color,
+        sortKey: new Date(t.due + 'T00:00:00').getTime(),
+        nextMeetingLabel: fmtDateTime(t.nextMeeting, t.nextMeetingTime),
+        goto: function () { self.selectProject(t.projectId); },
+      };
+    });
+
+    const periodFilter = this.state.periodFilter;
+    const periodMax = periodFilter === 'week' ? 7 : (periodFilter === 'month' ? 31 : Infinity);
+    const allSorted = tasks.slice().sort(function (a, b) { return a.sortKey - b.sortKey; });
+    const scheduleTasks = allSorted.filter(function (t) { return diffDays(t.due) <= periodMax; });
+    const hiddenCount = allSorted.length - scheduleTasks.length;
+    const periodCountLabel = periodFilter === 'all'
+      ? scheduleTasks.length + '件を表示中'
+      : scheduleTasks.length + '件を表示中（範囲外' + hiddenCount + '件は非表示）';
+
+    const projectCards = projects.map(function (p) {
+      const pts = tasks.filter(function (t) { return t.projectId === p.id; });
+      const nearest = pts.slice().sort(function (a, b) { return a.sortKey - b.sortKey; })[0];
+      return {
+        id: p.id,
+        name: p.name,
+        startDate: p.startDate,
+        taskCount: pts.length,
+        nearestLabel: nearest ? (nearest.name + ' ・ ' + nearest.countdown) : 'タスクなし',
+        open: function () { self.selectProject(p.id); },
+      };
+    });
+
+    const view = this.state.view;
+    const selectedProject = projects.filter(function (p) { return p.id === self.state.selectedProjectId; })[0] || projects[0];
+    const projectTasks = tasks.filter(function (t) { return t.projectId === selectedProject.id; })
+      .sort(function (a, b) { return a.sortKey - b.sortKey; });
+
+    const isSchedule = view === 'schedule';
+    const isProjects = view === 'projects';
+    const isTasks = view === 'tasks';
+    const isInput = view === 'input';
+    const isTabProject = this.state.inputTab === 'project';
+    const isTabTask = this.state.inputTab === 'task';
+
+    return {
+      accentTeal: accentTeal,
+      accentCoral: accentCoral,
+      isSchedule: isSchedule,
+      isProjects: isProjects,
+      isTasks: isTasks,
+      isInput: isInput,
+      scheduleTasks: scheduleTasks,
+      periodCountLabel: periodCountLabel,
+      periodWeekBg: periodFilter === 'week' ? '#ffffff' : 'transparent',
+      periodWeekColor: periodFilter === 'week' ? '#24292b' : '#8a929a',
+      periodMonthBg: periodFilter === 'month' ? '#ffffff' : 'transparent',
+      periodMonthColor: periodFilter === 'month' ? '#24292b' : '#8a929a',
+      periodAllBg: periodFilter === 'all' ? '#ffffff' : 'transparent',
+      periodAllColor: periodFilter === 'all' ? '#24292b' : '#8a929a',
+      setPeriodWeek: function () { self.setPeriod('week'); },
+      setPeriodMonth: function () { self.setPeriod('month'); },
+      setPeriodAll: function () { self.setPeriod('all'); },
+      projectCards: projectCards,
+      selectedProject: selectedProject,
+      projectTasks: projectTasks,
+      isTabProject: isTabProject,
+      isTabTask: isTabTask,
+      saved: this.state.saved,
+      scheduleNavColor: isSchedule ? accentTeal : '#9aa2a9',
+      projectsNavColor: (isProjects || isTasks) ? accentTeal : '#9aa2a9',
+      inputNavColor: isInput ? accentTeal : '#9aa2a9',
+      tabProjectBg: isTabProject ? '#ffffff' : 'transparent',
+      tabProjectColor: isTabProject ? '#24292b' : '#8a929a',
+      tabTaskBg: isTabTask ? '#ffffff' : 'transparent',
+      tabTaskColor: isTabTask ? '#24292b' : '#8a929a',
+      goSchedule: function () { self.goView('schedule'); },
+      goProjects: function () { self.goView('projects'); },
+      goInput: function () { self.goView('input'); },
+      backToProjects: function () { self.goView('projects'); },
+      goToAddTask: function () { self.goAddTask(); },
+      setTabProject: function () { self.setInputTab('project'); },
+      setTabTask: function () { self.setInputTab('task'); },
+      handleSave: function () { self.handleSave(); },
+    };
+  }
+}
+</script>
+</body>
+</html>
