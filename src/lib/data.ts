@@ -1,9 +1,10 @@
-import { supabase } from "./supabase/client";
+import { createClient } from "./supabase/server";
 import { Project, Task } from "./types";
 
 export type TaskWithProject = Task & { project_name: string };
 
 export async function getTasksWithProject(): Promise<TaskWithProject[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("tasks")
     .select("id, project_id, name, due_at, next_meeting_at, assignee, created_at, projects(name)");
@@ -23,6 +24,7 @@ export async function getTasksWithProject(): Promise<TaskWithProject[]> {
 }
 
 export async function getProjects(): Promise<Project[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
     .select("id, name, start_date, created_at")
@@ -33,6 +35,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function getProject(id: string): Promise<Project | null> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
     .select("id, name, start_date, created_at")
@@ -44,6 +47,7 @@ export async function getProject(id: string): Promise<Project | null> {
 }
 
 export async function getTasksByProject(projectId: string): Promise<Task[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("tasks")
     .select("id, project_id, name, due_at, next_meeting_at, assignee, created_at")
