@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { createProject, createTask } from "@/lib/actions";
 import { Project } from "@/lib/types";
 
 type Tab = "project" | "task";
@@ -52,23 +52,13 @@ export default function NewForm({
     setSaving(true);
     setError(null);
 
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setSaving(false);
-      setError("[診断] ブラウザ側でログイン状態を確認できませんでした。再ログインしてください。");
-      return;
-    }
-
-    const { error: insertError } = await supabase
-      .from("projects")
-      .insert({ name: projectName.trim(), start_date: projectStart || null });
+    const result = await createProject({ name: projectName.trim(), startDate: projectStart || null });
     setSaving(false);
-    if (insertError) {
-      setError(`[診断] ログイン中(${userData.user.email})ですが保存に失敗しました: ${insertError.message}`);
+    if (result.error) {
+      setError(result.error);
       return;
     }
     router.push("/projects");
-    router.refresh();
   }
 
   async function submitTask(e: React.FormEvent) {
@@ -83,20 +73,20 @@ export default function NewForm({
     }
     setSaving(true);
     setError(null);
-    const { error: insertError } = await supabase.from("tasks").insert({
-      project_id: taskProjectId,
+
+    const result = await createTask({
+      projectId: taskProjectId,
       name: taskName.trim(),
-      due_at: toIsoOrNull(dueDate, dueTime),
-      next_meeting_at: toIsoOrNull(meetingDate, meetingTime),
+      dueAt: toIsoOrNull(dueDate, dueTime),
+      nextMeetingAt: toIsoOrNull(meetingDate, meetingTime),
       assignee: assignee.trim() || null,
     });
     setSaving(false);
-    if (insertError) {
-      setError(insertError.message);
+    if (result.error) {
+      setError(result.error);
       return;
     }
     router.push(`/projects/${taskProjectId}`);
-    router.refresh();
   }
 
   const inputClass =

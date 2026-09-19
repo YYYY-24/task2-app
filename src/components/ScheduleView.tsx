@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { setTaskCompletion } from "@/lib/actions";
 import { TaskWithProject } from "@/lib/data";
 import {
   countdownLabel,
@@ -31,7 +31,7 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
 
   async function handleComplete(id: string) {
     setCompletedIds((prev) => new Set(prev).add(id));
-    await supabase.from("tasks").update({ completed_at: new Date().toISOString() }).eq("id", id);
+    await setTaskCompletion(id, true);
     router.refresh();
   }
 

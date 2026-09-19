@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { setTaskCompletion } from "@/lib/actions";
 import { Task } from "@/lib/types";
 import { countdownLabel, formatDateTime, getUrgency, tokyoNow, URGENCY_COLOR } from "@/lib/schedule";
 
@@ -12,8 +12,7 @@ export default function ProjectTaskList({ tasks }: { tasks: Task[] }) {
   const today = useMemo(() => tokyoNow(), []);
 
   async function toggleComplete(task: Task) {
-    const value = task.completed_at ? null : new Date().toISOString();
-    await supabase.from("tasks").update({ completed_at: value }).eq("id", task.id);
+    await setTaskCompletion(task.id, !task.completed_at);
     router.refresh();
   }
 

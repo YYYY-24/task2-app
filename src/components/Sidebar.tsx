@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase/client";
+import { usePathname } from "next/navigation";
+import { signOutAction } from "@/lib/actions";
 
 const ACCENT = "#2c7871";
 
@@ -42,13 +42,6 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   return (
     <div className="w-[232px] min-w-[232px] bg-white border-r border-[#e3e7e8] flex flex-col p-4">
@@ -84,16 +77,18 @@ export default function Sidebar() {
         })}
       </div>
 
-      <button
-        onClick={handleLogout}
-        className="mt-auto flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-semibold text-[#5b6570] hover:bg-[#f5f7f7] cursor-pointer text-left"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-          <path d="M16 17l5-5-5-5M21 12H9" />
-        </svg>
-        ログアウト
-      </button>
+      <form action={signOutAction} className="mt-auto">
+        <button
+          type="submit"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-semibold text-[#5b6570] hover:bg-[#f5f7f7] cursor-pointer text-left"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+            <path d="M16 17l5-5-5-5M21 12H9" />
+          </svg>
+          ログアウト
+        </button>
+      </form>
     </div>
   );
 }
