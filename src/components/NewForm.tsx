@@ -51,12 +51,20 @@ export default function NewForm({
     }
     setSaving(true);
     setError(null);
+
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      setSaving(false);
+      setError("[診断] ブラウザ側でログイン状態を確認できませんでした。再ログインしてください。");
+      return;
+    }
+
     const { error: insertError } = await supabase
       .from("projects")
       .insert({ name: projectName.trim(), start_date: projectStart || null });
     setSaving(false);
     if (insertError) {
-      setError(insertError.message);
+      setError(`[診断] ログイン中(${userData.user.email})ですが保存に失敗しました: ${insertError.message}`);
       return;
     }
     router.push("/projects");
