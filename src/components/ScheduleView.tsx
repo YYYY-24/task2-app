@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 import { TaskWithProject } from "@/lib/data";
 import {
   countdownLabel,
@@ -25,7 +26,14 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
 export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
   const router = useRouter();
   const [period, setPeriod] = useState<PeriodFilter>("week");
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const today = useMemo(() => tokyoNow(), []);
+
+  async function handleComplete(id: string) {
+    setCompletedIds((prev) => new Set(prev).add(id));
+    await supabase.from("tasks").update({ completed_at: new Date().toISOString() }).eq("id", id);
+    router.refresh();
+  }
 
   const { visible, hiddenCount, rangeLabel } = useMemo(() => {
     const withMeta = tasks.map((t) => ({
@@ -52,8 +60,10 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
       return t.due_at ? isWithinRange(t.due_at, range) : true;
     });
 
-    return { visible: filtered, hiddenCount: sorted.length - filtered.length, rangeLabel: label };
-  }, [tasks, period, today]);
+    const withoutCompleted = filtered.filter((t) => !completedIds.has(t.id));
+
+    return { visible: withoutCompleted, hiddenCount: sorted.length - filtered.length, rangeLabel: label };
+  }, [tasks, period, today, completedIds]);
 
   return (
     <div>
@@ -94,6 +104,13 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
             onClick={() => router.push(`/projects/${t.project_id}`)}
             className="flex items-center gap-4 bg-white border border-[#e3e7e8] rounded-xl px-4.5 py-3.5 cursor-pointer hover:bg-[#fafbfb] hover:border-[#d5dadc] transition-colors"
           >
+            <input
+              type="checkbox"
+              aria-label="完了にする"
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => handleComplete(t.id)}
+              className="w-4.5 h-4.5 shrink-0 accent-[#2c7871] cursor-pointer"
+            />
             <div
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ background: URGENCY_COLOR[t.urgency] }}

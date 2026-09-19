@@ -13,6 +13,7 @@ export type Task = {
   next_meeting_at: string | null;
   assignee: string | null;
   created_at: string;
+  completed_at: string | null;
 };
 
 export type Urgency = "overdue" | "urgent" | "soon" | "later" | "none";

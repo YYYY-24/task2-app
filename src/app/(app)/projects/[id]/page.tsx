@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProject, getTasksByProject } from "@/lib/data";
-import { countdownLabel, formatDateTime, getUrgency, tokyoNow, URGENCY_COLOR } from "@/lib/schedule";
+import ProjectTaskList from "@/components/ProjectTaskList";
 
 export default async function ProjectTasksPage({
   params,
@@ -11,13 +11,6 @@ export default async function ProjectTasksPage({
   const { id } = await params;
   const [project, tasks] = await Promise.all([getProject(id), getTasksByProject(id)]);
   if (!project) notFound();
-
-  const today = tokyoNow();
-  const sorted = [...tasks].sort((a, b) => {
-    const ak = a.due_at ? new Date(a.due_at).getTime() : Infinity;
-    const bk = b.due_at ? new Date(b.due_at).getTime() : Infinity;
-    return ak - bk;
-  });
 
   return (
     <div>
@@ -48,37 +41,7 @@ export default async function ProjectTasksPage({
         </Link>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {sorted.map((t) => {
-          const urgency = getUrgency(t.due_at, today);
-          return (
-            <div
-              key={t.id}
-              className="flex items-center gap-4 bg-white border border-[#e3e7e8] rounded-xl px-4.5 py-3.5"
-            >
-              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: URGENCY_COLOR[urgency] }} />
-              <div className="w-24 shrink-0">
-                <div className="text-xs font-bold" style={{ color: URGENCY_COLOR[urgency] }}>
-                  {countdownLabel(t.due_at, today)}
-                </div>
-                <div className="text-[11px] text-[#9aa2a9]">{formatDateTime(t.due_at)}</div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold">{t.name}</div>
-              </div>
-              <div className="w-32 shrink-0 text-right">
-                <div className="text-xs text-[#6b7680]">担当: {t.assignee ?? "未定"}</div>
-                <div className="text-[11px] text-[#a7aeb8] mt-0.5">
-                  次回打合せ {formatDateTime(t.next_meeting_at)}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-        {sorted.length === 0 && (
-          <div className="text-sm text-[#9aa2a9] py-8 text-center">業務項目がまだありません</div>
-        )}
-      </div>
+      <ProjectTaskList tasks={tasks} />
     </div>
   );
 }

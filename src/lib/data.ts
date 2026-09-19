@@ -3,11 +3,14 @@ import { Project, Task } from "./types";
 
 export type TaskWithProject = Task & { project_name: string };
 
+const TASK_COLUMNS = "id, project_id, name, due_at, next_meeting_at, assignee, created_at, completed_at";
+
 export async function getTasksWithProject(): Promise<TaskWithProject[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tasks")
-    .select("id, project_id, name, due_at, next_meeting_at, assignee, created_at, projects(name)");
+    .select(`${TASK_COLUMNS}, projects(name)`)
+    .is("completed_at", null);
 
   if (error) throw error;
 
@@ -19,6 +22,7 @@ export async function getTasksWithProject(): Promise<TaskWithProject[]> {
     next_meeting_at: t.next_meeting_at,
     assignee: t.assignee,
     created_at: t.created_at,
+    completed_at: t.completed_at,
     project_name: (t.projects as unknown as { name: string } | null)?.name ?? "不明なプロジェクト",
   }));
 }
@@ -46,11 +50,13 @@ export async function getProject(id: string): Promise<Project | null> {
   return data;
 }
 
+// プロジェクト詳細画面では「完了済みを表示」トグルを持たせるため、
+// 完了・未完了の両方をここで取得し、絞り込みはクライアント側で行う。
 export async function getTasksByProject(projectId: string): Promise<Task[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tasks")
-    .select("id, project_id, name, due_at, next_meeting_at, assignee, created_at")
+    .select(TASK_COLUMNS)
     .eq("project_id", projectId);
 
   if (error) throw error;
