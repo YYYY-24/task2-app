@@ -12,6 +12,7 @@ import {
   getWeekRange,
   isWithinRange,
   tokyoNow,
+  URGENCY_COLOR,
 } from "@/lib/schedule";
 
 type PeriodFilter = "week" | "month" | "all";
@@ -38,12 +39,11 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
   const router = useRouter();
   const [period, setPeriod] = useState<PeriodFilter>("week");
   const [sortBy, setSortBy] = useState<SortBy>("due");
-  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [showCompleted, setShowCompleted] = useState(false);
   const today = useMemo(() => tokyoNow(), []);
 
-  async function handleComplete(id: string) {
-    setCompletedIds((prev) => new Set(prev).add(id));
-    await setTaskCompletion(id, true);
+  async function toggleComplete(id: string, completed: boolean) {
+    await setTaskCompletion(id, completed);
     router.refresh();
   }
 
@@ -53,13 +53,19 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
     router.refresh();
   }
 
+  const completedCount = tasks.filter((t) => t.completed_at).length;
+
   const { visible, hiddenCount, rangeLabel } = useMemo(() => {
-    const withMeta = tasks.map((t) => {
-      const badge = getBadge(t.due_at, t.priority, today);
-      const isOverdue = t.due_at ? getUrgency(t.due_at, today) === "overdue" : false;
-      const sortKey = t.due_at ? new Date(t.due_at).getTime() : new Date(t.created_at).getTime();
-      return { ...t, badge, isOverdue, sortKey };
-    });
+    const withMeta = tasks
+      .filter((t) => showCompleted || !t.completed_at)
+      .map((t) => {
+        const badge = t.completed_at
+          ? { label: "完了", color: URGENCY_COLOR.none, group: 0 }
+          : getBadge(t.due_at, t.priority, today);
+        const isOverdue = !t.completed_at && t.due_at ? getUrgency(t.due_at, today) === "overdue" : false;
+        const sortKey = t.due_at ? new Date(t.due_at).getTime() : new Date(t.created_at).getTime();
+        return { ...t, badge, isOverdue, sortKey };
+      });
 
     let range: { start: Date; end: Date } | null = null;
     let label: string | null = null;
@@ -73,15 +79,14 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
     }
 
     const filtered = withMeta.filter((t) => {
+      if (t.completed_at) return true; // 完了済みは表示ONの間は期間に関係なく表示
       if (t.badge.group !== 0) return true; // 期限未定・優先度のみの項目は常に表示
       if (t.isOverdue) return true;
       if (!range) return true;
       return t.due_at ? isWithinRange(t.due_at, range) : true;
     });
 
-    const withoutCompleted = filtered.filter((t) => !completedIds.has(t.id));
-
-    const sorted = [...withoutCompleted].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "assignee") {
         const an = a.assignee ?? "";
         const bn = b.assignee ?? "";
@@ -96,7 +101,7 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
     });
 
     return { visible: sorted, hiddenCount: withMeta.length - filtered.length, rangeLabel: label };
-  }, [tasks, period, sortBy, today, completedIds]);
+  }, [tasks, period, sortBy, today, showCompleted]);
 
   const showGroupHeadings = sortBy === "due";
 
@@ -127,11 +132,15 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <div className="text-xs text-[#9aa2a9]">
-          {rangeLabel
-            ? `${rangeLabel} ・ ${visible.length}件を表示中（超過分・期限未定を含む、範囲外${hiddenCount}件は非表示）`
-            : `${visible.length}件を表示中`}
-        </div>
+        <label className="flex items-center gap-2 text-sm text-[#6b7680] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showCompleted}
+            onChange={(e) => setShowCompleted(e.target.checked)}
+            className="w-4 h-4 accent-[#2c7871] cursor-pointer"
+          />
+          完了済みを表示（{completedCount}件）
+        </label>
         <div className="flex gap-1 bg-[#f1f3f4] p-1 rounded-[10px]">
           {(Object.keys(SORT_LABELS) as SortBy[]).map((key) => (
             <button
@@ -149,9 +158,16 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
         </div>
       </div>
 
+      <div className="text-xs text-[#9aa2a9] mb-3">
+        {rangeLabel
+          ? `${rangeLabel} ・ ${visible.length}件を表示中（超過分・期限未定を含む、範囲外${hiddenCount}件は非表示）`
+          : `${visible.length}件を表示中`}
+      </div>
+
       <div className="flex flex-col gap-2">
         {visible.map((t, i) => {
-          const showHeading = showGroupHeadings && t.badge.group > 0 && visible[i - 1]?.badge.group !== t.badge.group;
+          const showHeading =
+            showGroupHeadings && !t.completed_at && t.badge.group > 0 && visible[i - 1]?.badge.group !== t.badge.group;
           return (
             <div key={t.id}>
               {showHeading && (
@@ -162,12 +178,14 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
               <div
                 onClick={() => router.push(`/projects/${t.project_id}`)}
                 className="flex items-center gap-4 bg-white border border-[#e3e7e8] rounded-xl px-4.5 py-3.5 cursor-pointer hover:bg-[#fafbfb] hover:border-[#d5dadc] transition-colors"
+                style={t.completed_at ? { opacity: 0.55 } : undefined}
               >
                 <input
                   type="checkbox"
                   aria-label="完了にする"
+                  checked={!!t.completed_at}
                   onClick={(e) => e.stopPropagation()}
-                  onChange={() => handleComplete(t.id)}
+                  onChange={() => toggleComplete(t.id, !t.completed_at)}
                   className="w-4.5 h-4.5 shrink-0 accent-[#2c7871] cursor-pointer"
                 />
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: t.badge.color }} />
@@ -178,7 +196,9 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
                   {t.due_at && <div className="text-[11px] text-[#9aa2a9]">{formatDateTime(t.due_at)}</div>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold">{t.name}</div>
+                  <div className="text-sm font-semibold" style={t.completed_at ? { textDecoration: "line-through" } : undefined}>
+                    {t.name}
+                  </div>
                   <div className="text-xs text-[#8a929a] mt-0.5">{t.project_name}</div>
                 </div>
                 <div className="w-24 shrink-0 text-right">

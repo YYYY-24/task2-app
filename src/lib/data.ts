@@ -6,12 +6,15 @@ export type TaskWithProject = Task & { project_name: string };
 const TASK_COLUMNS = "id, project_id, name, due_at, priority, assignee, created_at, completed_at";
 const PROJECT_COLUMNS = "id, name, start_date, completion_date, next_meeting_at, created_at";
 
-export async function getTasksWithProject(): Promise<TaskWithProject[]> {
+export async function getTasksWithProject(
+  options: { includeCompleted?: boolean } = {}
+): Promise<TaskWithProject[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tasks")
-    .select(`${TASK_COLUMNS}, projects(name)`)
-    .is("completed_at", null);
+  let query = supabase.from("tasks").select(`${TASK_COLUMNS}, projects(name)`);
+  if (!options.includeCompleted) {
+    query = query.is("completed_at", null);
+  }
+  const { data, error } = await query;
 
   if (error) throw error;
 
