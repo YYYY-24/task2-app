@@ -35,6 +35,17 @@ export async function deleteProject(projectId: string) {
   return { error: null };
 }
 
+export async function updateProjectName(projectId: string, name: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("projects").update({ name }).eq("id", projectId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects");
+  return { error: null };
+}
+
 export async function updateProjectMeeting(projectId: string, nextMeetingAt: string | null) {
   const supabase = await createClient();
   const { error } = await supabase

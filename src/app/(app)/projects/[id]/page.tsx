@@ -4,6 +4,7 @@ import { getProject, getTasksByProject } from "@/lib/data";
 import ProjectTaskList from "@/components/ProjectTaskList";
 import ProjectMeetingEditor from "@/components/ProjectMeetingEditor";
 import ProjectDatesEditor from "@/components/ProjectDatesEditor";
+import ProjectNameEditor from "@/components/ProjectNameEditor";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
 
 export default async function ProjectTasksPage({
@@ -32,7 +33,7 @@ export default async function ProjectTasksPage({
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="text-xl font-bold">{project.name}</div>
+          <ProjectNameEditor projectId={project.id} name={project.name} />
           <div className="text-sm text-[#6b7680] mt-1">業務項目一覧（期限順）</div>
         </div>
         <Link
