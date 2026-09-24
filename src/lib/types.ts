@@ -7,11 +7,14 @@ export type Project = {
   created_at: string;
 };
 
+export type Priority = "soon" | "someday" | null;
+
 export type Task = {
   id: string;
   project_id: string;
   name: string;
   due_at: string | null;
+  priority: Priority;
   assignee: string | null;
   created_at: string;
   completed_at: string | null;

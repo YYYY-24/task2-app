@@ -1,4 +1,4 @@
-import { Urgency } from "./types";
+import { Priority, Urgency } from "./types";
 
 const TZ = "Asia/Tokyo";
 
@@ -113,4 +113,33 @@ export function toTokyoInputParts(iso: string | null): { date: string; time: str
 export function dateTimeToIso(date: string, time: string): string | null {
   if (!date) return null;
   return new Date(`${date}T${time || "00:00"}:00+09:00`).toISOString();
+}
+
+// 期限日を持たない業務項目向けの優先度バッジ。日付があるものとは
+// 意図的に違う色にして、混同しないようにする。
+export const PRIORITY_COLOR: Record<"soon" | "someday", string> = {
+  soon: "#b8863d",
+  someday: "#a7aeb8",
+};
+
+export const PRIORITY_LABEL: Record<"soon" | "someday", string> = {
+  soon: "早めに対応",
+  someday: "急がない",
+};
+
+export type Badge = { label: string; color: string; group: number };
+
+// group はスケジュール一覧の並び順（0=期限あり, 1=早めに, 2=急がない, 3=未設定）に使う。
+export function getBadge(dueAt: string | null, priority: Priority, today: Date): Badge {
+  if (dueAt) {
+    const urgency = getUrgency(dueAt, today);
+    return { label: countdownLabel(dueAt, today), color: URGENCY_COLOR[urgency], group: 0 };
+  }
+  if (priority === "soon") {
+    return { label: PRIORITY_LABEL.soon, color: PRIORITY_COLOR.soon, group: 1 };
+  }
+  if (priority === "someday") {
+    return { label: PRIORITY_LABEL.someday, color: PRIORITY_COLOR.someday, group: 2 };
+  }
+  return { label: "期限未定", color: URGENCY_COLOR.none, group: 3 };
 }

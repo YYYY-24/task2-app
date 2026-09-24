@@ -3,7 +3,7 @@ import { Project, Task } from "./types";
 
 export type TaskWithProject = Task & { project_name: string };
 
-const TASK_COLUMNS = "id, project_id, name, due_at, assignee, created_at, completed_at";
+const TASK_COLUMNS = "id, project_id, name, due_at, priority, assignee, created_at, completed_at";
 const PROJECT_COLUMNS = "id, name, start_date, completion_date, next_meeting_at, created_at";
 
 export async function getTasksWithProject(): Promise<TaskWithProject[]> {
@@ -20,6 +20,7 @@ export async function getTasksWithProject(): Promise<TaskWithProject[]> {
     project_id: t.project_id,
     name: t.name,
     due_at: t.due_at,
+    priority: t.priority,
     assignee: t.assignee,
     created_at: t.created_at,
     completed_at: t.completed_at,

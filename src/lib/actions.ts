@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Priority } from "@/lib/types";
 
 export async function createProject(input: {
   name: string;
@@ -70,6 +71,7 @@ export async function createTask(input: {
   projectId: string;
   name: string;
   dueAt: string | null;
+  priority: Priority;
   assignee: string | null;
 }) {
   const supabase = await createClient();
@@ -77,6 +79,7 @@ export async function createTask(input: {
     project_id: input.projectId,
     name: input.name,
     due_at: input.dueAt,
+    priority: input.dueAt ? null : input.priority,
     assignee: input.assignee,
   });
 

@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProject, createTask } from "@/lib/actions";
 import { Project } from "@/lib/types";
+import { PRIORITY_LABEL } from "@/lib/schedule";
 
 type Tab = "project" | "task";
+type DueMode = "date" | "soon" | "someday";
 
 function toIsoOrNull(date: string, time: string): string | null {
   if (!date) return null;
@@ -33,6 +35,7 @@ export default function NewForm({
 
   const [taskProjectId, setTaskProjectId] = useState(initialProjectId || projects[0]?.id || "");
   const [taskName, setTaskName] = useState("");
+  const [dueMode, setDueMode] = useState<DueMode>("date");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("");
   const [assignee, setAssignee] = useState("");
@@ -80,7 +83,8 @@ export default function NewForm({
     const result = await createTask({
       projectId: taskProjectId,
       name: taskName.trim(),
-      dueAt: toIsoOrNull(dueDate, dueTime),
+      dueAt: dueMode === "date" ? toIsoOrNull(dueDate, dueTime) : null,
+      priority: dueMode === "date" ? null : dueMode,
       assignee: assignee.trim() || null,
     });
     setSaving(false);
@@ -163,10 +167,42 @@ export default function NewForm({
           </label>
           <div className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
             期限
-            <div className="grid grid-cols-[2fr_1fr] gap-2.5">
-              <input type="date" className={inputClass} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-              <input type="time" className={inputClass} value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
+            <div className="flex gap-1 bg-[#f1f3f4] p-1 rounded-[10px] w-fit">
+              <button
+                type="button"
+                onClick={() => setDueMode("date")}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+                style={{ background: dueMode === "date" ? "#ffffff" : "transparent", color: dueMode === "date" ? "#24292b" : "#8a929a" }}
+              >
+                日付を指定
+              </button>
+              <button
+                type="button"
+                onClick={() => setDueMode("soon")}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+                style={{ background: dueMode === "soon" ? "#ffffff" : "transparent", color: dueMode === "soon" ? "#24292b" : "#8a929a" }}
+              >
+                {PRIORITY_LABEL.soon}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDueMode("someday")}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
+                style={{ background: dueMode === "someday" ? "#ffffff" : "transparent", color: dueMode === "someday" ? "#24292b" : "#8a929a" }}
+              >
+                {PRIORITY_LABEL.someday}
+              </button>
             </div>
+            {dueMode === "date" ? (
+              <div className="grid grid-cols-[2fr_1fr] gap-2.5">
+                <input type="date" className={inputClass} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                <input type="time" className={inputClass} value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
+              </div>
+            ) : (
+              <div className="text-xs text-[#9aa2a9]">
+                具体的な日程は設定せず、「{PRIORITY_LABEL[dueMode]}」としてスケジュールに表示されます
+              </div>
+            )}
           </div>
           <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
             担当者
