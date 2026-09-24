@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProject, getTasksByProject } from "@/lib/data";
 import ProjectTaskList from "@/components/ProjectTaskList";
 import ProjectMeetingEditor from "@/components/ProjectMeetingEditor";
+import ProjectDatesEditor from "@/components/ProjectDatesEditor";
 import DeleteProjectButton from "@/components/DeleteProjectButton";
 
 export default async function ProjectTasksPage({
@@ -46,6 +47,11 @@ export default async function ProjectTasksPage({
         </Link>
       </div>
 
+      <ProjectDatesEditor
+        projectId={project.id}
+        startDate={project.start_date}
+        completionDate={project.completion_date}
+      />
       <ProjectMeetingEditor projectId={project.id} nextMeetingAt={project.next_meeting_at} />
 
       <ProjectTaskList tasks={tasks} />

@@ -2,6 +2,7 @@ export type Project = {
   id: string;
   name: string;
   start_date: string | null;
+  completion_date: string | null;
   next_meeting_at: string | null;
   created_at: string;
 };

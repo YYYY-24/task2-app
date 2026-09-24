@@ -29,6 +29,7 @@ export default function NewForm({
 
   const [projectName, setProjectName] = useState("");
   const [projectStart, setProjectStart] = useState("");
+  const [projectCompletion, setProjectCompletion] = useState("");
 
   const [taskProjectId, setTaskProjectId] = useState(initialProjectId || projects[0]?.id || "");
   const [taskName, setTaskName] = useState("");
@@ -50,7 +51,11 @@ export default function NewForm({
     setSaving(true);
     setError(null);
 
-    const result = await createProject({ name: projectName.trim(), startDate: projectStart || null });
+    const result = await createProject({
+      name: projectName.trim(),
+      startDate: projectStart || null,
+      completionDate: projectCompletion || null,
+    });
     setSaving(false);
     if (result.error) {
       setError(result.error);
@@ -119,10 +124,16 @@ export default function NewForm({
             プロジェクト名称
             <input className={inputClass} value={projectName} onChange={(e) => setProjectName(e.target.value)} />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
-            開始予定時期
-            <input type="date" className={inputClass} value={projectStart} onChange={(e) => setProjectStart(e.target.value)} />
-          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
+              着工予定
+              <input type="date" className={inputClass} value={projectStart} onChange={(e) => setProjectStart(e.target.value)} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
+              完成予定
+              <input type="date" className={inputClass} value={projectCompletion} onChange={(e) => setProjectCompletion(e.target.value)} />
+            </label>
+          </div>
           {error && <div className="text-sm text-[#c14a34]">{error}</div>}
           <button
             type="submit"

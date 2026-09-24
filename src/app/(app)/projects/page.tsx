@@ -41,7 +41,9 @@ export default async function ProjectsPage() {
                 {p.taskCount}件
               </div>
             </div>
-            <div className="text-xs text-[#8a929a]">開始予定: {p.start_date ?? "未定"}</div>
+            <div className="text-xs text-[#8a929a]">
+              着工予定: {p.start_date ?? "未定"} ／ 完成予定: {p.completion_date ?? "未定"}
+            </div>
             <div className="h-px bg-[#eef0f1] my-0.5" />
             <div className="text-xs text-[#6b7680]">直近の期限</div>
             <div className="text-sm font-semibold">{p.nearestLabel}</div>
