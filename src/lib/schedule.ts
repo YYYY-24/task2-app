@@ -76,6 +76,7 @@ export function formatDateTime(iso: string | null): string {
     timeZone: TZ,
     month: "numeric",
     day: "numeric",
+    weekday: "short",
   }).format(d);
   const timePart = new Intl.DateTimeFormat("ja-JP", {
     timeZone: TZ,

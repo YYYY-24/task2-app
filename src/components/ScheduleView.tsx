@@ -16,6 +16,7 @@ import {
 } from "@/lib/schedule";
 
 type PeriodFilter = "week" | "month" | "all";
+type SortBy = "due" | "assignee";
 
 const PERIOD_LABELS: Record<PeriodFilter, string> = {
   week: "今週",
@@ -23,9 +24,15 @@ const PERIOD_LABELS: Record<PeriodFilter, string> = {
   all: "すべて",
 };
 
+const SORT_LABELS: Record<SortBy, string> = {
+  due: "期限順",
+  assignee: "担当者順",
+};
+
 export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
   const router = useRouter();
   const [period, setPeriod] = useState<PeriodFilter>("week");
+  const [sortBy, setSortBy] = useState<SortBy>("due");
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const today = useMemo(() => tokyoNow(), []);
 
@@ -47,7 +54,6 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
       urgency: getUrgency(t.due_at, today),
       sortKey: t.due_at ? new Date(t.due_at).getTime() : Infinity,
     }));
-    const sorted = [...withMeta].sort((a, b) => a.sortKey - b.sortKey);
 
     let range: { start: Date; end: Date } | null = null;
     let label: string | null = null;
@@ -60,7 +66,7 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
       label = `${today.getMonth() + 1}月`;
     }
 
-    const filtered = sorted.filter((t) => {
+    const filtered = withMeta.filter((t) => {
       if (t.urgency === "overdue" || t.urgency === "none") return true;
       if (!range) return true;
       return t.due_at ? isWithinRange(t.due_at, range) : true;
@@ -68,8 +74,21 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
 
     const withoutCompleted = filtered.filter((t) => !completedIds.has(t.id));
 
-    return { visible: withoutCompleted, hiddenCount: sorted.length - filtered.length, rangeLabel: label };
-  }, [tasks, period, today, completedIds]);
+    const sorted = [...withoutCompleted].sort((a, b) => {
+      if (sortBy === "assignee") {
+        const an = a.assignee ?? "";
+        const bn = b.assignee ?? "";
+        if (!an && !bn) return a.sortKey - b.sortKey;
+        if (!an) return 1;
+        if (!bn) return -1;
+        const cmp = an.localeCompare(bn, "ja");
+        return cmp !== 0 ? cmp : a.sortKey - b.sortKey;
+      }
+      return a.sortKey - b.sortKey;
+    });
+
+    return { visible: sorted, hiddenCount: withMeta.length - filtered.length, rangeLabel: label };
+  }, [tasks, period, sortBy, today, completedIds]);
 
   return (
     <div>
@@ -77,7 +96,7 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
         <div>
           <div className="text-xl font-bold">スケジュール</div>
           <div className="text-sm text-[#6b7680] mt-1">
-            全プロジェクトの業務項目を、期限が近い順に表示しています（超過分は常に表示）
+            全プロジェクトの業務項目を{sortBy === "assignee" ? "担当者ごとに" : "期限が近い順に"}表示しています（超過分は常に表示）
           </div>
         </div>
         <div className="flex gap-1 bg-[#f1f3f4] p-1 rounded-[10px]">
@@ -97,10 +116,27 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
         </div>
       </div>
 
-      <div className="text-xs text-[#9aa2a9] mb-3">
-        {rangeLabel
-          ? `${rangeLabel} ・ ${visible.length}件を表示中（超過分を含む、範囲外${hiddenCount}件は非表示）`
-          : `${visible.length}件を表示中`}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs text-[#9aa2a9]">
+          {rangeLabel
+            ? `${rangeLabel} ・ ${visible.length}件を表示中（超過分を含む、範囲外${hiddenCount}件は非表示）`
+            : `${visible.length}件を表示中`}
+        </div>
+        <div className="flex gap-1 bg-[#f1f3f4] p-1 rounded-[10px]">
+          {(Object.keys(SORT_LABELS) as SortBy[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => setSortBy(key)}
+              className="px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer"
+              style={{
+                background: sortBy === key ? "#ffffff" : "transparent",
+                color: sortBy === key ? "#24292b" : "#8a929a",
+              }}
+            >
+              {SORT_LABELS[key]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
