@@ -15,6 +15,7 @@ export type Task = {
   name: string;
   due_at: string | null;
   priority: Priority;
+  notes: string | null;
   assignee: string | null;
   created_at: string;
   completed_at: string | null;

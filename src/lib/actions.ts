@@ -83,6 +83,7 @@ export async function createTask(input: {
   name: string;
   dueAt: string | null;
   priority: Priority;
+  notes: string | null;
   assignee: string | null;
 }) {
   const supabase = await createClient();
@@ -91,6 +92,7 @@ export async function createTask(input: {
     name: input.name,
     due_at: input.dueAt,
     priority: input.dueAt ? null : input.priority,
+    notes: input.notes,
     assignee: input.assignee,
   });
 
@@ -105,7 +107,7 @@ export async function createTask(input: {
 export async function updateTask(
   taskId: string,
   projectId: string,
-  input: { name: string; dueAt: string | null; priority: Priority; assignee: string | null }
+  input: { name: string; dueAt: string | null; priority: Priority; notes: string | null; assignee: string | null }
 ) {
   const supabase = await createClient();
   const { error } = await supabase
@@ -114,6 +116,7 @@ export async function updateTask(
       name: input.name,
       due_at: input.dueAt,
       priority: input.dueAt ? null : input.priority,
+      notes: input.notes,
       assignee: input.assignee,
     })
     .eq("id", taskId);

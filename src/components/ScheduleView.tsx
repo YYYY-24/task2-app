@@ -2,10 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { deleteTask, setTaskCompletion } from "@/lib/actions";
 import { TaskWithProject } from "@/lib/data";
 import {
-  formatDateTime,
   getBadge,
   getMonthRange,
   getUrgency,
@@ -14,6 +12,7 @@ import {
   tokyoNow,
   URGENCY_COLOR,
 } from "@/lib/schedule";
+import TaskRow from "@/components/TaskRow";
 
 type PeriodFilter = "week" | "month" | "all";
 type SortBy = "due" | "assignee";
@@ -41,17 +40,6 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
   const [sortBy, setSortBy] = useState<SortBy>("due");
   const [showCompleted, setShowCompleted] = useState(false);
   const today = useMemo(() => tokyoNow(), []);
-
-  async function toggleComplete(id: string, completed: boolean) {
-    await setTaskCompletion(id, completed);
-    router.refresh();
-  }
-
-  async function handleDelete(id: string, projectId: string, name: string) {
-    if (!confirm(`「${name}」を削除しますか？`)) return;
-    await deleteTask(id, projectId);
-    router.refresh();
-  }
 
   const completedCount = tasks.filter((t) => t.completed_at).length;
 
@@ -175,49 +163,12 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
                   {GROUP_HEADING[t.badge.group]}
                 </div>
               )}
-              <div
-                onClick={() => router.push(`/projects/${t.project_id}`)}
-                className="flex items-center gap-4 bg-white border border-[#e3e7e8] rounded-xl px-4.5 py-3.5 cursor-pointer hover:bg-[#fafbfb] hover:border-[#d5dadc] transition-colors"
-                style={t.completed_at ? { opacity: 0.55 } : undefined}
-              >
-                <input
-                  type="checkbox"
-                  aria-label="完了にする"
-                  checked={!!t.completed_at}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={() => toggleComplete(t.id, !t.completed_at)}
-                  className="w-4.5 h-4.5 shrink-0 accent-[#2c7871] cursor-pointer"
-                />
-                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: t.badge.color }} />
-                <div className="w-24 shrink-0">
-                  <div className="text-xs font-bold" style={{ color: t.badge.color }}>
-                    {t.badge.label}
-                  </div>
-                  {t.due_at && <div className="text-[11px] text-[#9aa2a9]">{formatDateTime(t.due_at)}</div>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold" style={t.completed_at ? { textDecoration: "line-through" } : undefined}>
-                    {t.name}
-                  </div>
-                  <div className="text-xs text-[#8a929a] mt-0.5">{t.project_name}</div>
-                </div>
-                <div className="w-24 shrink-0 text-right">
-                  <div className="text-xs text-[#6b7680]">担当: {t.assignee ?? "未定"}</div>
-                </div>
-                <button
-                  type="button"
-                  aria-label="削除"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(t.id, t.project_id, t.name);
-                  }}
-                  className="shrink-0 text-[#a7aeb8] hover:text-[#c14a34] cursor-pointer"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                    <path d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m-7 0v12a2 2 0 002 2h4a2 2 0 002-2V7" />
-                  </svg>
-                </button>
-              </div>
+              <TaskRow
+                task={t}
+                badge={t.badge}
+                projectName={t.project_name}
+                onNavigate={() => router.push(`/projects/${t.project_id}`)}
+              />
             </div>
           );
         })}

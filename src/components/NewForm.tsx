@@ -38,6 +38,7 @@ export default function NewForm({
   const [dueMode, setDueMode] = useState<DueMode>("date");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("");
+  const [notes, setNotes] = useState("");
   const [assignee, setAssignee] = useState("");
 
   function switchTab(next: Tab) {
@@ -85,6 +86,7 @@ export default function NewForm({
       name: taskName.trim(),
       dueAt: dueMode === "date" ? toIsoOrNull(dueDate, dueTime) : null,
       priority: dueMode === "date" ? null : dueMode,
+      notes: notes.trim() || null,
       assignee: assignee.trim() || null,
     });
     setSaving(false);
@@ -207,6 +209,16 @@ export default function NewForm({
           <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
             担当者
             <input className={inputClass} value={assignee} onChange={(e) => setAssignee(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
+            メモ
+            <textarea
+              className={inputClass}
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="備忘録として自由に記載できます"
+            />
           </label>
           {error && <div className="text-sm text-[#c14a34]">{error}</div>}
           <button

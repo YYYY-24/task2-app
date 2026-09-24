@@ -15,7 +15,17 @@ import {
 
 type DueMode = "date" | "soon" | "someday";
 
-export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
+export default function TaskRow({
+  task,
+  badge,
+  projectName,
+  onNavigate,
+}: {
+  task: Task;
+  badge: Badge;
+  projectName?: string;
+  onNavigate?: () => void;
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -26,6 +36,7 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
   const [dueMode, setDueMode] = useState<DueMode>(task.due_at ? "date" : task.priority ?? "date");
   const [dueDate, setDueDate] = useState(initialDue.date);
   const [dueTime, setDueTime] = useState(initialDue.time);
+  const [notes, setNotes] = useState(task.notes ?? "");
   const [assignee, setAssignee] = useState(task.assignee ?? "");
 
   const inputClass =
@@ -37,6 +48,7 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
     setDueDate(parts.date);
     setDueTime(parts.time);
     setDueMode(task.due_at ? "date" : task.priority ?? "date");
+    setNotes(task.notes ?? "");
     setAssignee(task.assignee ?? "");
     setError(null);
     setEditing(true);
@@ -64,6 +76,7 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
       name: name.trim(),
       dueAt: dueMode === "date" ? dateTimeToIso(dueDate, dueTime) : null,
       priority: dueMode === "date" ? null : dueMode,
+      notes: notes.trim() || null,
       assignee: assignee.trim() || null,
     });
     setSaving(false);
@@ -115,6 +128,17 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
           <input className={inputClass} value={assignee} onChange={(e) => setAssignee(e.target.value)} />
         </label>
 
+        <label className="flex flex-col gap-1.5 text-xs text-[#6b7680]">
+          メモ
+          <textarea
+            className={inputClass}
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="備忘録として自由に記載できます"
+          />
+        </label>
+
         {error && <div className="text-sm text-[#c14a34]">{error}</div>}
 
         <div className="flex items-center gap-3">
@@ -137,13 +161,17 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
 
   return (
     <div
-      className="flex items-center gap-4 bg-white border border-[#e3e7e8] rounded-xl px-4.5 py-3.5"
+      onClick={onNavigate}
+      className={`flex items-center gap-4 bg-white border border-[#e3e7e8] rounded-xl px-4.5 py-3.5 ${
+        onNavigate ? "cursor-pointer hover:bg-[#fafbfb] hover:border-[#d5dadc] transition-colors" : ""
+      }`}
       style={task.completed_at ? { opacity: 0.55 } : undefined}
     >
       <input
         type="checkbox"
         aria-label="完了にする"
         checked={!!task.completed_at}
+        onClick={(e) => e.stopPropagation()}
         onChange={toggleComplete}
         className="w-4.5 h-4.5 shrink-0 accent-[#2c7871] cursor-pointer"
       />
@@ -161,6 +189,8 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
         <div className="text-sm font-semibold" style={task.completed_at ? { textDecoration: "line-through" } : undefined}>
           {task.name}
         </div>
+        {task.notes && <div className="text-xs text-[#9aa2a9] mt-0.5 truncate">{task.notes}</div>}
+        {projectName && <div className="text-xs text-[#8a929a] mt-0.5">{projectName}</div>}
       </div>
       <div className="w-24 shrink-0 text-right">
         <div className="text-xs text-[#6b7680]">担当: {task.assignee ?? "未定"}</div>
@@ -168,7 +198,10 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
       <button
         type="button"
         aria-label="編集"
-        onClick={startEdit}
+        onClick={(e) => {
+          e.stopPropagation();
+          startEdit();
+        }}
         className="shrink-0 text-[#a7aeb8] hover:text-[#2c7871] cursor-pointer"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -179,7 +212,10 @@ export default function TaskRow({ task, badge }: { task: Task; badge: Badge }) {
       <button
         type="button"
         aria-label="削除"
-        onClick={handleDelete}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDelete();
+        }}
         className="shrink-0 text-[#a7aeb8] hover:text-[#c14a34] cursor-pointer"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
