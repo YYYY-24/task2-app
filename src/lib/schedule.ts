@@ -90,3 +90,26 @@ export function isWithinRange(dueAt: string, range: { start: Date; end: Date }):
   const due = inTokyo(new Date(dueAt));
   return due >= range.start && due <= range.end;
 }
+
+// 編集フォームの date/time インプットに戻すため、Asia/Tokyo基準の
+// "YYYY-MM-DD" / "HH:mm" に分解する。
+export function toTokyoInputParts(iso: string | null): { date: string; time: string } {
+  if (!iso) return { date: "", time: "" };
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return { date: `${get("year")}-${get("month")}-${get("day")}`, time: `${get("hour")}:${get("minute")}` };
+}
+
+export function dateTimeToIso(date: string, time: string): string | null {
+  if (!date) return null;
+  return new Date(`${date}T${time || "00:00"}:00+09:00`).toISOString();
+}

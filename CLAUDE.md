@@ -36,14 +36,16 @@
   - 「今週」は月曜始まり・日曜終わり（カレンダー週）。「今月」はカレンダー月（1日〜月末）。
 
 ### Step 3: Logic & Data
-- データ項目: プロジェクト（名称、開始予定時期）、業務項目（プロジェクトに紐づく、期限〈日付＋時刻〉、次回打ち合わせ日〈日付＋時刻〉、担当者）
+- データ項目: プロジェクト（名称、開始予定時期、次回打ち合わせ日〈日付＋時刻〉）、業務項目（プロジェクトに紐づく、期限〈日付＋時刻〉、担当者）
+  - 次回打ち合わせ日はプロジェクト単位の情報。業務項目の登録フォームには含めず、プロジェクト詳細画面内で個別に登録・更新する
 - サンプルデータ:
   - プロジェクトA / 開始予定時期: 2026-10-01
   - 業務項目: ①要件整理 ②設計 ③実装 …
   - 期限: 各業務項目ごとに設定
-  - 次回打ち合わせ日、担当者も業務項目に紐づけて記録
+  - 担当者は業務項目に紐づけて記録
 - ビジネスロジック: 業務項目と期限をセットで管理し、締切が早い順に表示する。表示は「プロジェクト内でのリスト」と「全プロジェクト横断でのリスト」の両方に対応する
 - 完了管理: 業務項目にはチェックボックスで完了/未完了を切り替えられる（`tasks.completed_at`、完了時刻を保持しnullなら未完了）。完了にするとスケジュール画面・プロジェクト一覧の件数/直近期限からは自動的に非表示になる。プロジェクト内の業務リスト画面のみ「完了済みを表示」トグルで見返せる
+- 削除: 誤って作成したプロジェクト・業務項目は削除できる。プロジェクト削除時は紐づく業務項目も連鎖削除される（`on delete cascade`）。削除は確認ダイアログを挟む
 - ファイル/画像の扱い: テキスト情報のみ（画像・PDF等は非対応）
 - 検索/並び替え: 期限が近い順（デフォルト）。それ以外は標準的な構成で良い
 - 将来的な拡張: LINEへの通知連携（締切が近い業務をLINEに通知）
@@ -93,6 +95,7 @@ create table projects (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   start_date date,
+  next_meeting_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -102,9 +105,9 @@ create table tasks (
   project_id uuid not null references projects(id) on delete cascade,
   name text not null,
   due_at timestamptz,
-  next_meeting_at timestamptz,
   assignee text,
   sort_order integer,
+  completed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -113,7 +116,9 @@ create index tasks_due_at_idx on tasks(due_at);
 create index tasks_project_id_idx on tasks(project_id);
 ```
 
-- 期限・次回打ち合わせは日付＋時刻で保持する（`timestamptz`）。入力画面では日付欄と時刻欄を分けて入力させる。
+RLSは`projects`・`tasks`双方で有効化し、`auth.uid() is not null`（ログイン済みなら許可）のポリシーを設定している。**ポリシーが1つも登録されていないとPostgresの既定動作としてログイン済みでも全操作が拒否される**ため、変更後は`select * from pg_policies where tablename in ('projects','tasks');`で必ず存在を確認すること。
+
+- 期限・次回打ち合わせは日付＋時刻で保持する（`timestamptz`）。入力画面では日付欄と時刻欄を分けて入力させる。次回打ち合わせ日はプロジェクト単位（`projects.next_meeting_at`）。
 - スケジュール画面（全プロジェクト横断）は `tasks` を `due_at` 昇順でJOINして表示する。「今週／今月／すべて」の期間フィルターで絞り込み、超過（`due_at` < 現在時刻）は常に表示する。
 - 業務リスト画面（プロジェクト内）は `project_id` で絞り込み、同様に `due_at` 昇順で表示する。
 - 締切の近さは4段階で色分け表示する: 超過（濃い赤）／3日以内（コーラル）／1週間以内（ティール）／それ以降（グレー）。

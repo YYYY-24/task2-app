@@ -3,7 +3,8 @@ import { Project, Task } from "./types";
 
 export type TaskWithProject = Task & { project_name: string };
 
-const TASK_COLUMNS = "id, project_id, name, due_at, next_meeting_at, assignee, created_at, completed_at";
+const TASK_COLUMNS = "id, project_id, name, due_at, assignee, created_at, completed_at";
+const PROJECT_COLUMNS = "id, name, start_date, next_meeting_at, created_at";
 
 export async function getTasksWithProject(): Promise<TaskWithProject[]> {
   const supabase = await createClient();
@@ -19,7 +20,6 @@ export async function getTasksWithProject(): Promise<TaskWithProject[]> {
     project_id: t.project_id,
     name: t.name,
     due_at: t.due_at,
-    next_meeting_at: t.next_meeting_at,
     assignee: t.assignee,
     created_at: t.created_at,
     completed_at: t.completed_at,
@@ -31,7 +31,7 @@ export async function getProjects(): Promise<Project[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, start_date, created_at")
+    .select(PROJECT_COLUMNS)
     .order("created_at", { ascending: true });
 
   if (error) throw error;
@@ -42,7 +42,7 @@ export async function getProject(id: string): Promise<Project | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
-    .select("id, name, start_date, created_at")
+    .select(PROJECT_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 

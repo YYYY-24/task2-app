@@ -34,8 +34,6 @@ export default function NewForm({
   const [taskName, setTaskName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("");
-  const [meetingDate, setMeetingDate] = useState("");
-  const [meetingTime, setMeetingTime] = useState("");
   const [assignee, setAssignee] = useState("");
 
   function switchTab(next: Tab) {
@@ -78,7 +76,6 @@ export default function NewForm({
       projectId: taskProjectId,
       name: taskName.trim(),
       dueAt: toIsoOrNull(dueDate, dueTime),
-      nextMeetingAt: toIsoOrNull(meetingDate, meetingTime),
       assignee: assignee.trim() || null,
     });
     setSaving(false);
@@ -158,13 +155,6 @@ export default function NewForm({
             <div className="grid grid-cols-[2fr_1fr] gap-2.5">
               <input type="date" className={inputClass} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
               <input type="time" className={inputClass} value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5 text-sm text-[#6b7680]">
-            次回打ち合わせ日
-            <div className="grid grid-cols-[2fr_1fr] gap-2.5">
-              <input type="date" className={inputClass} value={meetingDate} onChange={(e) => setMeetingDate(e.target.value)} />
-              <input type="time" className={inputClass} value={meetingTime} onChange={(e) => setMeetingTime(e.target.value)} />
             </div>
           </div>
           <label className="flex flex-col gap-1.5 text-sm text-[#6b7680]">

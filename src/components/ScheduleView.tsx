@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setTaskCompletion } from "@/lib/actions";
+import { deleteTask, setTaskCompletion } from "@/lib/actions";
 import { TaskWithProject } from "@/lib/data";
 import {
   countdownLabel,
@@ -32,6 +32,12 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
   async function handleComplete(id: string) {
     setCompletedIds((prev) => new Set(prev).add(id));
     await setTaskCompletion(id, true);
+    router.refresh();
+  }
+
+  async function handleDelete(id: string, projectId: string, name: string) {
+    if (!confirm(`「${name}」を削除しますか？`)) return;
+    await deleteTask(id, projectId);
     router.refresh();
   }
 
@@ -125,12 +131,22 @@ export default function ScheduleView({ tasks }: { tasks: TaskWithProject[] }) {
               <div className="text-sm font-semibold">{t.name}</div>
               <div className="text-xs text-[#8a929a] mt-0.5">{t.project_name}</div>
             </div>
-            <div className="w-32 shrink-0 text-right">
+            <div className="w-24 shrink-0 text-right">
               <div className="text-xs text-[#6b7680]">担当: {t.assignee ?? "未定"}</div>
-              <div className="text-[11px] text-[#a7aeb8] mt-0.5">
-                次回打合せ {formatDateTime(t.next_meeting_at)}
-              </div>
             </div>
+            <button
+              type="button"
+              aria-label="削除"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(t.id, t.project_id, t.name);
+              }}
+              className="shrink-0 text-[#a7aeb8] hover:text-[#c14a34] cursor-pointer"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                <path d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m-7 0v12a2 2 0 002 2h4a2 2 0 002-2V7" />
+              </svg>
+            </button>
           </div>
         ))}
         {visible.length === 0 && (

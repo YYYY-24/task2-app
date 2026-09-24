@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getProjects, getTasksWithProject } from "@/lib/data";
-import { countdownLabel, tokyoNow } from "@/lib/schedule";
+import { countdownLabel, formatDateTime, tokyoNow } from "@/lib/schedule";
 
 export default async function ProjectsPage() {
   const [projects, tasks] = await Promise.all([getProjects(), getTasksWithProject()]);
@@ -45,6 +45,9 @@ export default async function ProjectsPage() {
             <div className="h-px bg-[#eef0f1] my-0.5" />
             <div className="text-xs text-[#6b7680]">直近の期限</div>
             <div className="text-sm font-semibold">{p.nearestLabel}</div>
+            <div className="text-xs text-[#6b7680] mt-1">
+              次回打ち合わせ: <span className="font-semibold text-[#24292b]">{formatDateTime(p.next_meeting_at)}</span>
+            </div>
           </Link>
         ))}
         {cards.length === 0 && (

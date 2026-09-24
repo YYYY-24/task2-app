@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { setTaskCompletion } from "@/lib/actions";
+import { deleteTask, setTaskCompletion } from "@/lib/actions";
 import { Task } from "@/lib/types";
 import { countdownLabel, formatDateTime, getUrgency, tokyoNow, URGENCY_COLOR } from "@/lib/schedule";
 
@@ -13,6 +13,12 @@ export default function ProjectTaskList({ tasks }: { tasks: Task[] }) {
 
   async function toggleComplete(task: Task) {
     await setTaskCompletion(task.id, !task.completed_at);
+    router.refresh();
+  }
+
+  async function handleDelete(task: Task) {
+    if (!confirm(`「${task.name}」を削除しますか？`)) return;
+    await deleteTask(task.id, task.project_id);
     router.refresh();
   }
 
@@ -66,12 +72,19 @@ export default function ProjectTaskList({ tasks }: { tasks: Task[] }) {
                   {t.name}
                 </div>
               </div>
-              <div className="w-32 shrink-0 text-right">
+              <div className="w-24 shrink-0 text-right">
                 <div className="text-xs text-[#6b7680]">担当: {t.assignee ?? "未定"}</div>
-                <div className="text-[11px] text-[#a7aeb8] mt-0.5">
-                  次回打合せ {formatDateTime(t.next_meeting_at)}
-                </div>
               </div>
+              <button
+                type="button"
+                aria-label="削除"
+                onClick={() => handleDelete(t)}
+                className="shrink-0 text-[#a7aeb8] hover:text-[#c14a34] cursor-pointer"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path d="M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m-7 0v12a2 2 0 002 2h4a2 2 0 002-2V7" />
+                </svg>
+              </button>
             </div>
           );
         })}
