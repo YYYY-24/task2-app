@@ -102,6 +102,30 @@ export async function createTask(input: {
   return { error: null };
 }
 
+export async function updateTask(
+  taskId: string,
+  projectId: string,
+  input: { name: string; dueAt: string | null; priority: Priority; assignee: string | null }
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      name: input.name,
+      due_at: input.dueAt,
+      priority: input.dueAt ? null : input.priority,
+      assignee: input.assignee,
+    })
+    .eq("id", taskId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath("/projects");
+  return { error: null };
+}
+
 export async function deleteTask(taskId: string, projectId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", taskId);
